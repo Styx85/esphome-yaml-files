@@ -1,0 +1,61 @@
+# Author by airijia.com
+# Dual Interlock Switch
+substitutions:
+  # Modify variables based on your settings
+  hostname: '666'
+  ssid: 'airi'
+  password: 'airijia.com'
+esphome:
+  name: $hostname
+  platform: ESP8266
+  board: esp01_1m
+  board_flash_mode: dout
+wifi:
+  ssid: $ssid
+  password: $password
+  fast_connect: True
+api:
+  reboot_timeout: 0s
+ota:
+logger:
+
+status_led:
+  pin:
+    number: 13
+    inverted: True
+
+switch:
+  - platform: gpio
+    pin: 12
+    id: relay_1
+    name: $hostname relay_1
+    interlock: [relay_2]
+  - platform: gpio
+    pin: 5
+    id: relay_2
+    name: $hostname relay_2
+    interlock: [relay_1]
+binary_sensor:
+  - platform: gpio
+    id: button_c
+    pin:
+      number: 10
+      inverted: True
+      mode: INPUT_PULLUP
+    on_multi_click:
+    - timing:
+        - ON for at most 1s
+        - OFF for at least 10ms
+      then:
+        if:
+          condition:
+            switch.is_off: relay_1
+          then:
+            switch.turn_on: relay_1
+          else:
+            switch.turn_on: relay_2
+    - timing:
+        - ON for at least 1s
+      then:
+        - switch.turn_off: relay_1
+        - switch.turn_off: relay_2
